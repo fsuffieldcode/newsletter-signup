@@ -1,14 +1,16 @@
 const express = require('express');
 const request = require('request');
 const bodyParser = require('body-parser');
-
+require('dotenv').config();
 const app = express();
-const port = 3000;
+const api_key = process.env.API_KEY;
+
+console.log(process.env);
 
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({extended: true}));
 
-app.listen(port, () => {
+app.listen(process.env.PORT || 3000, () => {
     console.log("server is running on port 3000");
 });
 
@@ -25,28 +27,44 @@ app.post("/", (req, res) => {
     let lastName = req.body.lName;
     let email = req.body.email;
 
+    var data = {
+        members: [
+            {
+                email_address: email,
+                status: "subscribed",
+                merge_fields: {
+                    FNAME: firstName,
+                    LNAME: lastName
+                }
+            }
+        ]
+    };
+
+    var jsonData = JSON.stringify(data)
+
     var options = {
         url: "https://us20.api.mailchimp.com/3.0/lists/dbd65cffae",
         method: "POST",
         headers: {
-            "Authorization": "angela1 b36750618508b3c564f5f6e8102e0dd0-us20"
-        }
+            "Authorization": "fabian7 " + api_key
+        },
+        body: jsonData
     };
     
     request(options, (error, response, body) => {
         if (error) {
-            console.log("error");
+            res.sendFile(__dirname + "/failure.html");
         } else {
-            console.log(response.statusCode);
+            if (response.statusCode === 200) {
+                res.sendFile(__dirname + "/success.html");
+            } else {
+                res.sendFile(__dirname + "/failure.html");
+            }
         }
     });
 
 });
 
-
-
-// API key
-// b36750618508b3c564f5f6e8102e0dd0-us20
-
-// List ID
-// dbd65cffae
+app.post("/failure", (req, res) => {
+    res.redirect("/");  
+})
